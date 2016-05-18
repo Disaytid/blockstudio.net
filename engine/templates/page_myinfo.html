@@ -1,0 +1,121 @@
+<div class="row">
+	<div data-widget-static="" class="panel wijets-full-screen editbox-open panel-primary">
+		<div class="panel-heading">
+			<h2>Основные данные</h2>
+		</div>
+		<div style="display: block;" class="panel-body">
+			<form action="" class="form-horizontal row-border">
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Ваш логин</label>
+					<div class="col-sm-8">
+						<input class="form-control" placeholder="нет логина" id="data-login" disabled="" type="text">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Ваш E-Mail</label>
+					<div class="col-sm-8">
+						<input placeholder="test@example.com" id="data-email" class="form-control" type="text">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Новый пароль</label>
+					<div class="col-sm-8">
+						<input class="form-control" id="data-password" type="password">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Новый PIN</label>
+					<div class="col-sm-8">
+						<input class="form-control" id="data-pin" type="password">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">WMID <font size='2' id='wmcheck'>[...]</font></label>
+					<div class="col-sm-8">
+						<input class="form-control" id="data-wmid" type="text">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">WMR кошелёк</label>
+					<div class="col-sm-8">
+						<input class="form-control" id="data-wmr" type="text">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-2 control-label">Аватар (прямая ссылка)</label>
+					<div class="col-sm-8">
+						<input class="form-control" id="data-avatar" type="text">
+					</div>
+				</div>
+				<div class="panel-footer">
+					<div class="row">
+						<div class="col-sm-2 col-sm-offset-1">
+							<button onclick="data_save(['email','password','wmid','wmr','avatar','pin']); return false;" class="btn-primary btn">Сохранить</button>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script id='load_js'>
+	
+	function page_init()
+	{
+		BlockStudio.squery('user', 'data', {}, function(data) {
+			data = JSON.parse(data);
+			$.each(data, function(k, v) {
+				if(document.getElementById('data-'+k) && document.getElementById('data-'+k).type != 'password')
+					$('#data-'+k)[0].value = v;
+			});
+			
+			if(data.checkwm && data.checkwm == 1) {
+				$('#wmcheck')[0].innerHTML = '[Проверен]';
+			}
+			else {
+				$('#wmcheck')[0].innerHTML = '[<a href="#" onclick="check_wm()">Не проверен</a>]';
+			}
+		});
+	}
+	
+	function check_wm()
+	{
+		BlockStudio.squery('user', 'set', {'checkwm': '1'}, function(data) {
+			data = JSON.parse(data);
+			if(data.checkwm && data.checkwm == "1") {
+				alert('WMID верный');
+				localStorage.removeItem('data');
+				change_tab('/cabinet/myinfo');
+			}
+			else {
+				alert('WMID неверный');
+			}
+		});
+	}
+	
+	// а зачем мучаться?
+	function data_save(data)
+	{
+		if(typeof data != 'object' && typeof data != 'array')
+			return;
+		
+		save = {};
+		
+		$.each(data, function(k, v) {
+			if(document.getElementById('data-'+v) && document.getElementById('data-'+v).value.length >= 1)
+				save[v] = document.getElementById('data-'+v).value;
+		});
+		
+		BlockStudio.squery('user', 'set', save, function(data) {
+			data = JSON.parse(data);
+			if(data.answer && data.answer == true) {
+				localStorage.removeItem('data');
+				change_tab('/cabinet/profile');
+			}
+			else {
+				alert('Ошибка во время сохранения данных');
+			}
+		});
+	}
+</script>

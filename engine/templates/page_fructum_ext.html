@@ -1,0 +1,53 @@
+<div id='mshop' class="store">
+
+</div>
+
+<script id='load_js'>
+	function page_init()
+	{
+		$('#mshop')[0].innerHTML = 'Отправляем запрос...';
+		BlockStudio.query('fructum', 'modules', {}, function(data) {
+			data = JSON.parse(data);
+			$('#mshop')[0].innerHTML = '';
+			$.each(data, function(k, v) {
+				stars = '';
+				labels = '';
+				
+				for(i = 1; i <= v.mark; i++) {
+					stars += '<li><i class="fa fa-star"></i></li>';
+				}
+				
+				// зато без else if :)
+				switch(Number(v.mark)) {
+					case 1:
+						labels += '<span class="label label-inverse mb10">Очень плохо</span> &nbsp;';
+						break;
+					case 2:
+						labels += '<span class="label label-inverse mb10">Плохо</span> &nbsp;';
+						break;
+					case 3:
+						labels += '<span class="label label-inverse mb10">Так себе</span> &nbsp;';
+						break;
+					case 4:
+						labels += '<span class="label label-inverse mb10">Хорошо</span> &nbsp;';
+						break;
+					case 5:
+						labels += '<span class="label label-inverse mb10">Рекомендовано</span> &nbsp;';
+						break;
+					default:
+						labels += '<span class="label label-inverse mb10">Неизвестно</span> &nbsp;';
+						break;
+				}
+				
+				if(v.github.length >= 1) {
+					labels += '<span class="label label-inverse mb10">GitHub</span> &nbsp;';
+				}
+				if(v.cloudshop.length >= 1) {
+					labels += '<span class="label label-inverse mb10">CloudShop</span> &nbsp;';
+				}
+				
+				$('#mshop')[0].innerHTML += '<div class="box"><div class="row"><div class="col-sm-2"><img src="http://s1.blockstudio.net/blockstudio-net/avatar.jpg" class="mb20 img-responsive"></div><div class="col-sm-10"><h3 class="product-title mt0 mb10"><a href="http://fructum.blockstudio.net/#'+ v.id +'"><span class="product-price label label-danger">$0</span>'+ v.title +'</a></h3>' + labels + '<ul class="list-unstyled list-inline rating-list ml0 mb10">' + stars + '</ul><p class="mb20">' + v.describe + '</p></div></div></div>';
+			});
+		});
+	}
+</script>

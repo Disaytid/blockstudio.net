@@ -1,0 +1,90 @@
+A {
+color: #fff;
+text-decoration: none;
+}
+A:visited {
+color: #fff;
+}
+A:active {
+color: red;
+}
+
+.layout {
+    max-width: 1024px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 100%;
+}
+
+header {
+    margin-bottom: 3px;
+}
+
+.header-bg {
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+    background: #9b9b9b;
+    color: white;
+    background: linear-gradient(to bottom, #9b9b9b 0%,#8e8e8e 50%,#797979 100%);
+    text-align: right;
+	min-height: 20px;
+}
+
+.content {
+    margin-bottom: 3px;
+}
+
+.content-bg {
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+    background: #9b9b9b;
+    color: white;
+    background: linear-gradient(to bottom, #9b9b9b 0%,#8e8e8e 50%,#797979 100%);
+}
+
+.auth-form {
+	max-width: 512px;
+	margin: auto;
+	text-align: center;
+}
+
+#email{
+	width: 100%;
+	border: 3px solid rgb(81, 80, 80);
+	border-radius: 5px;
+	font-size: 16pt;
+	margin-bottom: 10px;
+}
+
+#password{
+	width: 100%;
+	border: 3px solid rgb(81, 80, 80);
+	border-radius: 5px;
+	font-size: 16pt;
+	margin-bottom: 10px;
+}
+
+.textbutton {
+    width: 100%;
+	border: 3px solid rgb(81, 80, 80);
+    border-radius: 5px;
+    font-size: 16pt;
+	margin-bottom: 10px;
+	color: rgb(81, 80, 80);
+}
+
+#reg{
+	padding-right: 260px;
+}
+
+.footer-bg {
+    padding: 10px;
+    border: 1px solid black;
+    border-radius: 5px;
+    background: #9b9b9b;
+    color: white;
+    background: linear-gradient(to bottom, #9b9b9b 0%,#8e8e8e 50%,#797979 100%);
+    text-align: center;
+}

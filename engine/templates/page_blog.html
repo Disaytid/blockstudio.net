@@ -1,0 +1,130 @@
+<div class="row">
+		<div class="col-md-12">
+			<div class="panel">
+				<div class="panel-body panel-no-padding">
+					<table class="table table-striped table-bordered">
+						<thead>
+							<tr>
+								<th>Заголовок</th>
+								<th>Автор</th>
+								<th>Тэги</th>
+								<th><i class="fa fa-comment"></i></th>
+								<th>Дата</th>
+								<th width="240">Действия</th>
+							</tr>
+						</thead>
+						<tbody id='blog-posts'>
+							
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+
+<style>
+/*To make sure there is modal displayed with this class for demo*/
+.visiblemodal {
+	position: relative;
+	top: auto;
+	right: auto;
+	left: auto;
+	bottom: auto;
+	z-index: 1;
+	display: block;
+	overflow: hidden;
+}
+</style>
+
+	<div class="modal" id="editpost">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h2 class="modal-title" id="edit-title">загрузка...</h2>
+          </div>
+          <div class="modal-body" id="edit-post">
+			<form action="" class="form-horizontal row-border">
+				<div class="form-group">
+					<div class="col-sm-8">
+						<textarea name="ckeditor" id="edit-content" cols="70" rows="20" class="ckeditor"></textarea>
+					</div>
+				</div>
+			</form>
+          </div>
+          <div class="modal-footer">
+			<button type="button" class="btn btn-default" onclick="accept_post()">Сохранить</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+
+<script id="load_js">
+	var blogdata = {};
+	var current_edit = 0;
+	
+	function accept_post()
+	{
+		BlockStudio.squery('blog', 'set', {'postid': current_edit, 'post': $('#edit-content')[0].value}, function(data) {
+			console.log(data);
+			data = JSON.parse(data);
+			if(data.answer == true) {
+				alert('Пост изменен');
+			}
+			else {
+				alert('Ошибка во время сохранения');
+			}
+		});
+	}
+	
+	function edit_post(id)
+	{
+		$('#edit-title')[0].innerHTML = blogdata[id].title;
+		$('#edit-content')[0].innerHTML = blogdata[id].post;
+		current_edit = id;
+	}
+	
+	function delete_post(id, element)
+	{
+		if( confirm("Вы уверены?") != true ) { return; } 
+		BlockStudio.squery('blog', 'delete', {'postid': id}, function(data) {
+			data = JSON.parse(data);
+			if(data.answer == true) {
+				element.style.display = 'none';
+				alert('Пост удален');
+			}
+			else {
+				alert('Ошибка во время удаления');
+			}
+		});
+	}
+	
+	function page_init()
+	{
+		BlockStudio.squery('blog', 'get', {}, function(data) {
+			data = JSON.parse(data);
+			if(data.id) {
+				data = [data];
+			}
+			$.each(data.reverse(), function(k, v) {
+				blogdata[v.id] = v;
+				tags = '';
+				console.log(v);
+				$.each(v.tags.split(','), function(kz, vz) {
+					tags += '<span class="label label-inverse">' + vz + '</span> &nbsp;';
+				});
+				date = new Date(v.time*1000);
+				date = date.toLocaleString();	
+				$('#blog-posts')[0].innerHTML += '<tr><td>' + v.title + '</td><td><a href="/cabinet/profile?id=' + localStorage.getItem('id') + '" onclick="change_tab(this.href)">' + localStorage.getItem('name') + '</a></td><td>' + tags + '</td><td>0</td><td>' + date + '</td><td><a href="#" class="btn btn-default btn-xs btn-label"><i class="fa fa-pencil"></i><a data-toggle="modal" href="#editpost" onclick="edit_post(' + v.id +')">Изменить</a><a href="#" onclick="delete_post(' + v.id + ', this.parentElement.parentElement)" class="btn btn-danger btn-xs btn-label"><i class="fa fa-trash-o"></i>Удалить</a></td></tr>';
+			});
+		});
+	}
+</script>
+
+<script>
+	CKEDITOR_BASEPATH  =  "http://s1.blockstudio.net/blockstudio-net/assets/plugins/form-ckeditor/";
+</script>
+<script type="text/javascript" src="http://s1.blockstudio.net/blockstudio-net/assets/plugins/form-ckeditor/ckeditor.js"></script>

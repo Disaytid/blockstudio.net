@@ -1,0 +1,161 @@
+<div id="panel-advancedoptions">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default note-panel" id="tl1">
+                <div class="panel-heading">
+                    <h2>Записки</h2>
+                </div>
+                <div class="panel-body panel-body panel-no-padding">
+                    <div class="notes-container row no-gutter">
+                        <div class="col-xs-5 col-sm-4 col-md-3">
+                            <div class="notes-sidebar">
+                                <div class="notes-list scroll-pane">
+                                    <div class="scroll-content">
+                                        <div class="notes-snippet active">
+                                            <h6 class="notes-title">...</h6>
+                                            <span class="notes-date"> </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="notes-options clearfix">
+                                    <a href="#" class="pull-left btn btn-success">Создать</a>
+                                    <div class="pull-right">
+                                        <a href="#" class="btn btn-default btn-danger"><i class="fa fa-trash-o"></i></a> 
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-7 col-sm-8 col-md-9">
+                            <div class="note scroll-pane" spellcheck="false">
+                                <div class="scroll-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id='load_js'>
+function page_init() {
+
+    var notes = [];
+    var noteSelected = 0;
+    var demoNotes = [{
+        content: 'Добро пожаловать в Block Studio! Сейчас вы читаете записку-пример. Чтобы удалить её, нажмите соответствующую кнопку снизу. Вы можете написать любое количество записок, они будут храниться в памяти вашего браузера. Вы также можете сохранять эти записки на нашем сервере, пользуясь кнопкой синхронизации.',
+        createdAt: '16/12/2013 at 11:00 PM'
+    }];
+
+    if (localStorage) {
+        notes = JSON.parse(localStorage.getItem('bs_notes')) || demoNotes;
+    } else {
+        notes = demoNotes;
+    }
+
+    var noteLiHtml = '<div class="notes-snippet">'+
+        '<h6 class="notes-title">%title%</h6>'+
+        '<span class="notes-date">%createdAt%</span>'+
+    '</div>';
+
+    var updateNoteList = function (notes) {
+        var noteList = '';
+        for (var i = 0, length = notes.length; i < length; i++) {
+            var titleElement = document.createElement("DIV");
+            $(titleElement).html(notes[i].content);
+            var title = $(titleElement).text();
+            noteList += noteLiHtml.replace('%title%', title.substr(0,20)+'...').replace('%createdAt%', notes[i].createdAt);
+        };
+
+        $('div.notes-list > div').html(noteList);
+
+        // add active class to open note
+        $('.notes-snippet').removeClass('active');
+        $('.notes-snippet').eq(noteSelected).addClass('active');
+    };
+
+    updateNoteList(notes);
+
+    var openNote = function (noteIndex) {
+        try {
+            noteSelected = noteIndex;
+            $('.note > .scroll-content').html(notes[noteIndex].content);
+            // add active class to open note
+            $('.notes-snippet').removeClass('active');
+            $('.notes-snippet').eq(noteIndex).addClass('active');
+        } catch (e) {
+            //ignore all errors
+        }
+    };
+
+    $('body').on('click', '.notes-snippet', function () {
+        openNote($(this).index());
+    });
+
+    openNote(0);
+
+    $('.notes-options .btn-success').click ( function () {
+        notes.push( {
+            content: '',
+            createdAt: '9/23/2014 at 11:32 PM'
+        });
+        updateNoteList(notes);
+        openNote(notes.length-1);
+        if (localStorage) localStorage.setItem('bs_notes', JSON.stringify(notes));
+
+        Utility.initScroller();
+    });
+
+    $('.notes-options .btn-danger').click ( function () {
+        notes.splice(noteSelected, 1);
+        updateNoteList(notes);
+        if (notes.length)
+            openNote(notes.length-1);
+        if (localStorage) localStorage.setItem('bs_notes', JSON.stringify(notes));
+    });
+
+    $('.note > .scroll-content')[0].addEventListener('input', function () {
+        notes[noteSelected].content = $('.note').html();
+        if (localStorage) localStorage.setItem('bs_notes', JSON.stringify(notes));
+        updateNoteList(notes);
+        Utility.initScroller();
+    }, false);
+
+    resizeNotes($('.notes-list'), noteListHeight());
+    resizeNotes($('.note'), noteHeight());
+    
+
+    $('.note > .scroll-content').summernote({
+        airMode: true
+    });
+
+
+}
+
+var noteHeight = function () {
+    var h = Utility.getViewPort().height;
+    var tOffset = $('.note').offset().top;
+    var t = h - tOffset; //removing size from top
+
+    var f = ($('footer').height() + parseInt($('.static-content').css('margin-bottom').replace('px', '')));
+    var t = t - f - 11; //removing size from bottom
+
+    return t;
+}
+
+var noteListHeight = function () {
+    var t = noteHeight() - $('.notes-options').outerHeight() - $('.notes-search').outerHeight();
+    return t;
+}
+
+function resizeNotes() { //change height of scroll based on sidebar viewport height
+    $('.note').css('height', noteHeight() + 'px')
+    $('.notes-list').css('height', noteListHeight() + 'px')
+}
+
+
+$(window).on('resize', function() {
+    resizeNotes();
+});
+</script>

@@ -1,0 +1,104 @@
+<script id='load_js'>
+	var load_interval = 0;
+	
+	function page_init() {
+		
+	}
+	
+	function list_init() {
+		if(load_interval == 0) {
+			load_interval = setInterval(function() { list_init(); }, 30000);
+		}
+		else {
+			clearInterval(load_interval);
+			load_interval = 0;
+			return list_init();
+		}
+		
+		BlockStudio.squery('user', 'contacts', {}, function(data) {
+				$('#bs-contacts')[0].innerHTML = '';
+				data = JSON.parse(data);
+				if(!data.items) { console.log('There is no contacts'); return; }
+				$.each(data.items, function(k, v) {
+					BlockStudio.helpers.userInfo(v, function(dt) {
+						if(document.getElementById('id' + v) || !dt.id) { return; }
+						$('#bs-contacts')[0].innerHTML += '<tr id="id' + v + '"><td align="left"><img class="avatar" src ="' + dt.avatar + '"></td><td><i>' + dt.login + '</i></td><td>' + dt.status + '</td><td>' + (dt.checkwm==1 ? 'Проверен' : 'Не проверен') + '</td></tr>';
+					});
+				});
+		});
+	}
+	
+	function got_name(id)
+	{
+		if(!id)
+			id = $('#current-id')[0].value
+	
+		if(isNaN(id)) {
+			BlockStudio.query('user', 'id', {'login': id}, function(data) {
+				data = JSON.parse(data);
+				
+				if(data.answer == false)
+					alert('Пользователь не найден'); 
+					
+				add_contact(data.answer);
+			});
+		}
+		else {
+			add_contact(id);
+		}
+	}
+	
+	function add_contact(id) {
+		BlockStudio.squery('user', 'contacts', {'add': id}, function(data) {
+			data = JSON.parse(data);
+			if(data.answer == true) {
+				alert('Контакт добавлен');
+			}
+			else {
+				alert('Ошибка');
+			}
+		});
+	}
+</script>
+<div class="page-tabs">
+	<ul class="nav nav-tabs">   
+		<li class="active"><a data-toggle="tab" href="#add">Добавить</a></li>
+		<li><a data-toggle="tab" onclick="list_init()" href="#list">Список</a></li>
+    </ul>
+</div>
+<div class="container-fluid">
+	<div class="tab-content">
+		<div class="tab-pane active" id="add">
+			<div class="row">
+				<form action="" class="form-horizontal row-border">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">ID \ Логин</label>
+						<div class="col-sm-8">
+							<input class="form-control" id='current-id' type="text"> <button onclick='got_name(); return false;' class="btn-primary btn">Добавить в список контактов</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		
+		<div class="tab-pane" id="list">
+			<div class="row">
+				<div class="table-responsive">
+								<table class="table">
+									<thead>
+										<tr>
+											<th style="padding-right:100px">Аватар</th>
+											<th>Имя</th>
+											<th>Статус</th>
+											<th>WMID</th>
+										</tr>
+									</thead>
+									<tbody id='bs-contacts'>
+										<tr><td align="left"><i>загрузка...</i></td></tr>
+									</tbody>
+								</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,192 @@
+<script id='init_js'>
+	function page_init() {
+		
+		setTimeout(function() { refresh_token(); }, 700); 
+		
+	}
+	
+	function refresh_token() {
+		$('#atoken')[0].value = localStorage.getItem('token');
+	}
+	
+	function apply_token(token) {
+		if(!token) 
+			token = $("#atoken")[0].value;
+			
+		localStorage.setItem('token', token);
+		alert('Токен успешно сохранен. Рекомендуем обновить страницу.');
+		//alert('Новый токен - ' + token);
+		return false;
+	}
+	
+	function get_data() {
+		BlockStudio.squery('user', 'data', {'id': $('#userid')[0].value}, function(data) {
+			data = JSON.parse(data);
+			res = '';
+			$.each(data, function(k, v) {
+				res += k + ' = ' + v + '\n';
+			});
+			alert(res + '\n\n Массив с данными в консоли JS');
+			console.log(data);
+		});
+	}
+	
+	function get_login() {
+		BlockStudio.query('user', 'id', {'login': $('#getlogin')[0].value}, function(data) {
+			data = JSON.parse(data);
+			prompt('ID пользователя - ' + data.answer, data.answer);
+		});
+	}
+	
+	function set_data() {
+		send = {};
+		send.id = $('#userset')[0].value;
+		send[$('#setkey')[0].value] = $('#setvalue')[0].value;
+		BlockStudio.squery('user', 'set', send, function(data) {
+			alert('Запрос отправлен. Ответ: ' + data);
+			console.log( JSON.parse(data) );
+		});
+	}
+	
+	function delete_post(id, element)
+	{
+		if( confirm("Вы уверены?") != true ) { return; } 
+		BlockStudio.squery('blog', 'delete', {'postid': id}, function(data) {
+			data = JSON.parse(data);
+			if(data.answer == true) {
+				element.style.display = 'none';
+				alert('Пост удален');
+			}
+			else {
+				alert('Ошибка во время удаления');
+			}
+		});
+	}
+	
+	function get_posts(user) {
+		$('#bgposts')[0].innerHTML = '';
+		BlockStudio.squery('blog', 'get', {'id': user}, function(data) {
+				data = JSON.parse(data);
+				if(data.id) {
+					data = [data];
+				}
+				$.each(data.reverse(), function(k, v) {
+					tags = '';
+					$.each(v.tags.split(','), function(kz, vz) {
+						tags += '<span class="label label-inverse">' + vz + '</span> &nbsp;';
+					});
+					date = new Date(v.time*1000);
+					date = date.toLocaleString();	
+					$('#bgposts')[0].innerHTML += '<div class="admin-post-body"><h3>' + v.title + '</h3>Тэги: ' + tags + ' <br> Дата: ' + date + ' <a href="#" onclick="delete_post(' + v.id + ', this.parentElement)" class="btn btn-danger btn-xs btn-label"><i class="fa fa-trash-o"></i>Удалить</a> <p>' + v.post + '</p></div>';
+				});
+		});
+	}
+	
+	function init_news()
+	{
+		window.newsdata = [];
+		$('#news-list')[0].innerHTML = '';
+		BlockStudio.query('news', 'get', {}, function(data) {
+			data = JSON.parse(data);
+			$.each(data, function(k, v) {
+				e = document.createElement('tr');
+				e.innerHTML = '<td>'+v.id+'</td>'+v.title+'<td>'+v.short+'</td><td>'+v.format+'</td><td>'+v.cat_name+' ('+v.cat+')</td>';
+				$('#news-list')[0].appendChild(e);
+				newsdata.push(v);
+			});
+		});
+	}
+</script>
+
+<div class="page-tabs">
+	<ul class="nav nav-tabs">   
+		<li class="active"><a data-toggle="tab" href="#tabmain">Главная</a></li>
+		<li><a data-toggle="tab" href="#users">Пользователи</a></li>
+		<li><a data-toggle="tab" href="#blogs">Блоги</a></li>
+		<li><a data-toggle="tab" onclick="init_news()" href="#news">Новости</a></li>
+		<li><a data-toggle="tab" href="#fructum">Fructum</a></li>
+		<li><a data-toggle="tab" href="#monitor">Мониторинг</a></li>
+		<li><a data-toggle="tab" href="#output">Вывод</a></li>
+    </ul>
+</div>
+
+<div class="container-fluid">
+                                
+
+	<div class="tab-content">
+	
+		<div class="tab-pane" id="template">
+			<div class="row">
+				<p>TEST</p>
+			</div>
+		</div>
+		
+		<div class="tab-pane" id="blogs">
+			<div class="row">
+				<form action="" class="form-horizontal row-border">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">ID пользователя</label>
+						<div class="col-sm-8">
+							<input class="form-control" id='blogid' type="text"> <button onclick="get_posts( $('#blogid')[0].value ); return false;" class="btn-primary btn">Показать</button>
+						</div>
+					</div>
+				</form>
+				<div id='bgposts'>
+				
+				</div>
+			</div>
+		</div>
+		
+		<div class="tab-pane" id="news">
+			<div class="row">
+				<div class="panel-body"><div class="table-responsive"><table class="table"><thead><tr><th style="padding-right:100px">ID</th><th>Заголовок</th><th>Содержимое</th><th>Время доб.</th><th>Категория</th></tr></thead><tbody id='news-list'></tbody></table></div></div>
+			</div>
+		</div>
+		
+		<div class="tab-pane active" id="tabmain">
+			<div class="row">
+				<form action="" class="form-horizontal row-border">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Access Token</label>
+						<div class="col-sm-8">
+							<input class="form-control" id='atoken' type="text"> <button onclick='apply_token(false); return false;' class="btn-primary btn">Изменить</button>
+							<a href='#' onclick='refresh_token()'>[Обновить]</a>
+						</div>
+					</div>
+				</form>
+				<p>Токен доступа - секретный ключ. Каждый токен имеет свой набор прав. Обычный токен даёт доступ лишь к вашему аккаунту. Если вы администратор и хотите воспользоваться своими правами, требуется ввести особый администраторский токен. Он заменит в памяти стандартный и повысит ваши права. Токен выдает главный администратор при назначении. Не передавайте его третьим лицам, иначе они смогут получить доступ к вашему аккаунту.</p>
+			</div>
+		</div>
+		
+		<div class="tab-pane" id="users">
+			<div class="row">
+				<form action="" class="form-horizontal row-border">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Узнать ID по логину</label>
+						<div class="col-sm-8">
+							<input class="form-control" id='getlogin' type="text"> <button onclick='get_login(); return false;' class="btn-primary btn">Узнать</button>
+						</div>
+					</div>
+				</form>
+				<form action="" class="form-horizontal row-border">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Узнать данные по ID</label>
+						<div class="col-sm-8">
+							<input class="form-control" id='userid' type="text"> <button onclick='get_data(); return false;' class="btn-primary btn">Узнать</button>
+						</div>
+					</div>
+				</form>
+				<form action="" class="form-horizontal row-border">
+					<div class="form-group">
+						<label class="col-sm-2 control-label">Изменить данные (ID / ключ / значение)</label>
+						<div class="col-sm-8">
+							<input class="form-control" id='userset' type="text"> <input class="form-control" id='setkey' type="text"> <input class="form-control" id='setvalue' type="text"> <button onclick='set_data(); return false;' class="btn-primary btn">Изменить</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
+	</div>
+
+</div>

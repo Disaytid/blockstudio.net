@@ -1,0 +1,200 @@
+<div class="row">
+	<div style='display: none;' id='messages_beta' class="alert alert-dismissable alert-warning">
+		<i class="fa fa-fw fa-warning"></i>&nbsp; <strong>Внимание!</strong> Система сообщений находится на стадии бета-тестирования
+		<button type="button" class="close" onclick="localStorage.setItem('messages_warning', '1')" data-dismiss="alert" aria-hidden="true">&times;</button>
+	</div>
+	<div class="col-md-4">
+		<div class="panel">
+				<div class="panel-body panel-no-padding">
+					<div class="input-search-icon-sm">
+                    	<input id='current-id' onchange='got_name(this.value)' placeholder="Логин или ID пользователя" class="form-control" type="text">
+                    </div>
+					<ul id='senders' class="mailbox-msg-list">
+						
+					</ul>
+				</div>
+			</div>
+	</div>
+	<div class="col-md-8">
+
+		<div class="panel panel-gray">
+			<div class="panel-body mailbox-panel">
+				<header>
+					<h3 class="pull-left mt0 mb0" id='current-name'></h3>
+					<div class=" pull-right">
+						<div class="btn-group">
+							<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+								<i class="fa fa-cog"></i> Действия <i class="fa fa-angle-down fa-sm"></i>
+							</button>
+							<ul class="dropdown-menu">
+								<li><a href="javascript:void(0)" onclick="$('#current-messages')[0].innerHTML = '';">Очистить</a></li>
+							</ul>
+						</div>
+					</div>
+				</header>
+				<section id='current-messages' class="tabular">
+					<div class="message tabular-row">
+						<div class="tabular-cell avatar">
+							<img src="http://s1.blockstudio.net/blockstudio-net/avatar.jpg" alt="avatar" class="">
+						</div>
+						<div class="tabular-cell msg">
+							<a href="#" class="msgee">Не выбран собеседник</a>
+							<p>Для начала беседы необходимо выбрать собеседника</p>
+						</div>
+						<div class="tabular-cell time">
+							<small>никогда</small>
+						</div>
+					</div>
+				</section>
+
+
+				<div class="panel-footer">
+					<textarea id='user-message' class="form-control" rows="4" placeholder="Напишите сообщение..." style="resize: none; width: none;"></textarea>
+					<div class="msg-composer">
+						<div class="pull-left">
+							<a href="javascript:void(0)" onclick='attach_file()' class="btn btn-default"><i class="fa fa-paperclip"></i> Прикрепить файл</a>
+							<a href="javascript:void(0)" onclick='attach_photo()' class="btn btn-default"><i class="fa fa-camera"></i> Прикрепить фото</a>
+						</div>
+						<div class="pull-right clearfix">
+							<a href="javascript:void(0)" onclick='send_message()' class="btn btn-primary send-btn pull-right">Отправить</a>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+	</div>
+	
+</div>
+
+<!-- иногда мне кажется, что весь код ниже писал какой-то душевно больной... а потом я вспоминаю, что это мой код // Mike Chip -->
+<script id='load_js'>
+	function page_init()
+	{
+		messages_init();
+		messages_polling();
+		
+		if(localStorage.getItem('messages_warning') != '1') {
+			$('#messages_beta')[0].style.display = 'block';
+		}
+	}
+	
+	function send_message()
+	{
+		BlockStudio.squery('user', 'messages', {'new': 1, 'to': $('#current-id')[0].value, 'message': $('#user-message')[0].value}, function(data) {
+			data = JSON.parse(data);
+			date = new Date();
+			
+			if(isNaN(data.answer) || data.answer <= 0) {
+				alert('Ошибка во время отправки сообщения');
+			}
+			else {
+				$('#current-messages')[0].innerHTML += '<div class="message tabular-row"><div class="tabular-cell avatar"><img src="'+ localStorage.getItem('avatar') +'" alt="avatar" class=""></div><div class="tabular-cell msg"><a href="#" class="msgee"></a><p>' + $('#user-message')[0].value + '</p></div><div class="tabular-cell time"><small>' + date.toLocaleString() + '</small></div></div>';
+				$('#user-message')[0].value = '';
+			}
+		});
+	}
+	
+	function messages_init()
+	{
+		get_messages(function(k, v) {
+				if(document.getElementById('list' + v.from) || Number(localStorage.getItem('id')) == v.from) { return; }
+				messages[v.id] = v;
+				reserve = document.createElement('div');
+				reserve.id = 'list' + v.from;
+				$('#senders')[0].appendChild(reserve);
+				if(!senders[v.from]) {
+					BlockStudio.helpers.userInfo(v.from, function(dt) {
+						//ans = JSON.parse(dt);
+						ans = dt;
+						senders[ans.id] = ans;
+						senders[ans.id]['last_message'] = v;
+						if($('#list' + ans.id)[0]) { 
+							$('#list' + ans.id)[0].remove();
+						}
+						$('#senders')[0].innerHTML += '<li id="list'+ ans.id +'"><a href="#" onclick="open_dialog('+ ans.id +')" class="mailbox-msg-list-item"><span class="time"></span><img src="'+ ans.avatar +'" alt="avatar" title="" style=""><div><span class="name">'+ ans.login +'</span><span class="msg"> '+ senders[ans.id]['last_message'].message.substr(0, 80) +'... </span></div></a></li>';
+					});
+				}
+				else {
+					senders[v.from]['last_message'] = v;
+					$('#list' + v.from)[0].remove();
+					$('#senders')[0].innerHTML += '<li id="list'+ senders[v.from].id +'"><a href="#" onclick="open_dialog('+ senders[v.from].id +')"  class="mailbox-msg-list-item"><span class="time"></span><img src="'+ senders[v.from].avatar +'" alt="avatar" title="" style=""><div><span class="name">'+ senders[v.from].login +'</span><span class="msg"> '+ senders[v.from]['last_message'].message.substr(0, 80) +'... </span></div></a></li>';
+				}
+		});
+		console.log('Messages init done');
+	}
+	
+	function open_dialog(user)
+	{
+		if(user == localStorage.getItem('id')) {
+			alert('Диалог с самим собой невозможен. Используйте записки.');
+			return;
+		}
+		
+		$('#current-messages')[0].innerHTML = '';
+		$('#current-id')[0].value = user;
+		
+		get_messages(function(k, v) {
+			if(v.from != user && v.to != user)
+				return;
+			
+			if(v.time)
+				date = new Date( v.time * 1000 );
+			else 
+				date = new Date(0);
+			
+			if(!senders[v.from]) {
+				BlockStudio.helpers.userInfo(v.from, function(dt) {
+					senders[v.from] = dt;
+					$('#current-messages')[0].innerHTML += '<div class="message tabular-row"><div class="tabular-cell avatar"><img src="'+ senders[v.from].avatar +'" alt="avatar" class=""></div><div class="tabular-cell msg"><a href="#" class="msgee"></a><p>' + v.message + '</p></div><div class="tabular-cell time"><small>' + date.toLocaleString() + '</small></div></div>';
+					$('#current-name')[0].innerHTML = dt.login;
+				});
+			}
+			else {
+				$('#current-messages')[0].innerHTML += '<div class="message tabular-row"><div class="tabular-cell avatar"><img src="'+ senders[v.from].avatar +'" alt="avatar" class=""></div><div class="tabular-cell msg"><a href="#" class="msgee"></a><p>' + v.message + '</p></div><div class="tabular-cell time"><small>' + date.toLocaleString() + '</small></div></div>';
+				$('#current-name')[0].innerHTML = senders[user].login;
+			}
+		});
+	}
+	
+	function attach_file()
+	{
+		alert('Функция недоступна для вашего аккаунта');
+	}
+	function attach_photo()
+	{
+		return attach_file();
+	}
+	
+	function got_name(id)
+	{
+		if(isNaN(id)) {
+			BlockStudio.query('user', 'id', {'login': id}, function(data) {
+				data = JSON.parse(data);
+				
+				if(data.answer == false)
+					alert('Пользователь не найден'); 
+					
+				$('#current-id')[0].value = data.answer;
+				open_dialog(data.answer);
+			});
+		}
+		else {
+			open_dialog(id);
+		}
+	}
+	
+	function messages_polling()
+	{
+		console.log('Messages polling started');
+		BlockStudio.squery('user', 'messages', {'polling': 1}, function(data) {
+			data = JSON.parse(data);
+			if( data.answer == Number( $('#current-id')[0].value ) ) {
+				date = new Date();
+				$('#current-messages')[0].innerHTML += '<div class="message tabular-row"><div class="tabular-cell avatar"><img src="'+ senders[data.answer].avatar +'" alt="avatar" class=""></div><div class="tabular-cell msg"><a href="#" class="msgee"></a><p>' + data.message + '</p></div><div class="tabular-cell time"><small>' + date.toLocaleString() + '</small></div></div>';
+			}
+			messages_polling();
+		});
+	}
+</script>

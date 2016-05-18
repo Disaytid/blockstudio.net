@@ -1,0 +1,204 @@
+<div class="row">
+	<div class="col-md-3">
+		<div class="panel panel-profile">
+			<div class="panel-body">
+				<div class="user-card">
+                    <div class="avatar">
+                        <img src="http://s1.blockstudio.net/blockstudio-net/avatar.jpg" id='user-avatar' class="img-responsive img-circle">
+                    </div>
+                    <div class="contact-name" id='user-name'>загрузка...</div>
+                    <div class="contact-status" id='user-status'></div>
+                    <ul id='user-details' class="details">
+                        
+                    </ul>
+                </div>
+                <hr class="outsider">
+                <div class="text-center" id='socials'>
+                  
+                </div>
+                <hr class="outsider">
+                <p class="m-n" id='biograph'></p>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2>
+					<ul id="nav-tabs" class="nav nav-tabs">
+						
+					</ul>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="tab-content">
+					<div class="tab-pane active" id="timeline">
+						<ul id='_timeline' class="timeline">
+							загрузка...
+						</ul>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script id='load_js'>
+		var userid = <?=isset($_GET['id']) ? (int)$_GET['id'] : "localStorage.getItem('id')"?>;
+		var timeline = {};
+		var line_timer = false;
+		
+		function add_blocks(whom) 
+		{
+			data = prompt('Введите желаемую сумму пополнения');
+			if(isNaN(data))
+				return alert('Сумма должна быть целым числом');
+				
+			if(!whom || isNaN(whom))
+				targa = prompt('Введите ID пользователя');
+			else
+				targa = whom;
+				
+			if(isNaN(targa))
+				return alert('ID должен быть целым числом');
+			
+			window.open('https://unitpay.ru/pay/2948-0e419?sum=' + data + '&account=' + targa + '&desc=Пополнение+счета+пользователя', '_blank');
+		}
+		
+		// за ваш инфаркт после прочтения кода ответственность не несу // Mike Chip
+		
+		function add_data(data)
+		{
+			if(!data.id) {
+					alert('Не удалось загрузить вторичные данные');
+					return;
+				}	
+				localStorage.setItem('data', JSON.stringify(data));
+				$('#user-details')[0].innerHTML += '<li><b>E-Mail</b>: ' + data.email + '</li>';
+				$('#user-details')[0].innerHTML += '<li><b>WMID</b>: ' + data.wmid + '</li>';
+				$('#user-details')[0].innerHTML += '<li><b>WM кошелек</b>: ' + data.wmr + '</li>';
+				$('#user-details')[0].innerHTML += '<li><b>Счет</b>: ' + data.blocks + ' <img src="http://s1.blockstudio.net/blockstudio-net/logo/2block16.png"> <a href="#" onclick="add_blocks(' + Number(localStorage.getItem('id')) + ')">[Пополнить счет]</a></li>';
+				$('#user-details')[0].innerHTML += '<li><b>На вывод</b>: ' + data.outblocks + ' <img src="http://s1.blockstudio.net/blockstudio-net/logo/2block16.png"></li>';
+				$('#user-details')[0].innerHTML += '<li><a href="#" onclick="refresh_add_data()">Обновить</a></li>';
+		}
+		
+		function refresh_add_data()
+		{
+			$('#user-details')[0].innerHTML = '';
+			BlockStudio.squery('user', 'data', {}, function(data) {
+				data = JSON.parse(data);
+				add_data(data);
+			});
+		}
+		
+		function apply_data(data) 
+		{
+			if(!data.id) {
+				alert('Пользователь не найден');
+				$('#user-name')[0].innerHTML = 'не найден';
+				return;
+			}	
+			$('#user-name')[0].innerHTML = data.login;
+			$('#user-avatar')[0].src = data.avatar;
+			$('#user-status')[0].innerHTML = data.status;
+			$('#biograph')[0].innerHTML += '<p>' + ((Number(data.checkwm) >= 1) ? 'WMID пользователя проверен' : 'WMID пользователя не проверен') + '</p>';
+			$('#biograph')[0].innerHTML += '<p>' + ((Number(data.ban) >= 1) ? 'Пользователь заблокирован' : 'Пользователь не заблокирован') + '</p>';
+			
+			if(data.socials && data.socials.length >= 1) {
+				$.each(data.socials, function(k, v) {
+					$('#socials')[0].innerHTML += '<a href="#" onclick="alert(' + k +' ID: '+ v +')" class="btn btn-social btn-'+ k +'"><i class="fa fa-'+ k +'"></i></a>';
+				});
+			}
+			else {
+				$('#socials')[0].innerHTML = 'Пользователь не присоединял аккаунты в социальных сетях';
+			}
+			
+			if(data.info && data.info.length >= 1) {
+				$.each(data.info, function(k, v) {
+					$('#user-details')[0].innerHTML += '<li><b>' + k + '</b>: ' + v + '</li>';
+				});
+			}
+		}
+		
+		function page_init()
+		{
+			if(localStorage.getItem('id') == userid && localStorage.getItem('data') != null) {
+				apply_data( JSON.parse( localStorage.getItem('data') ) );
+			}
+			else {
+				BlockStudio.helpers.userInfo(userid, function(data) {
+					//data = JSON.parse(data);
+					apply_data(data);
+				});
+			}
+			
+			if(localStorage.getItem('id') == userid) {
+				BlockStudio.squery('user', 'data', {}, function(data) {
+					data = JSON.parse(data);
+					add_data(data);
+				});
+			}
+			
+			BlockStudio.query('blog', 'get', {'id': userid}, function(data) {
+				data = JSON.parse(data);
+				if(data.id) {
+					data = [data];
+				}
+				$.each(data, function(k, v) {
+					tags = '';
+					console.log(v);
+					$.each(v.tags.split(','), function(kz, vz) {
+						tags += '<span class="label label-inverse">' + vz + '</span> &nbsp;';
+					});
+					date = new Date(v.time*1000);
+					timeline_add( {'date': date, 'icon': 'pencil', 'action': 'Добавлен пост в блог', 'text': v.post} );
+				});
+			});
+			
+			$('#_timeline')[0].innerHTML = '';
+			
+			//$('#nav-tabs')[0]
+			//<li><a href="#test" data-toggle="tab">TEST</a></li>
+		}
+		
+		function timeline_add(data)
+		{
+			if(!data) { data = {}; }
+			if(!data.icon) { data.icon = 'pencil'; }
+			if(!data.date) { data.date = new Date(10); }
+			if(!data.text) { data.text = ''; }
+			if(!data.action) { data.action = ''; }
+			
+			timeline[ date.getTime() ] = data;
+			
+			if(!line_timer)
+				line_timer = setTimeout(function() { build_line() }, 1500)
+				
+		}
+		
+		function build_line()
+		{
+			times = [];
+			$.each(timeline, function(k, v) {
+				times.push(k);
+			});
+			
+			times.sort(function (a, b) {
+				if(a < b)
+					return 1;
+				if(a > b)
+					return -1;
+					
+					return 0;
+			});
+		
+			$.each(times, function(k, data) {
+				data = timeline[data];
+				$('#_timeline')[0].innerHTML += '<li class="timeline-primary"><div class="timeline-icon"><i class="fa fa-' + data.icon + '"></i></div><div class="timeline-body"><div class="timeline-header"><span class="date">' + data.date.toLocaleString() + '</span> | <span>' + data.action + '</span></div><div class="timeline-content">' + data.text + '</div><div class="timeline-footer"></div></div></li>';
+			});
+			
+			line_timer = false;
+		}
+	</script>
+	
+</div>
